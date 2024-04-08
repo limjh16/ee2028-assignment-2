@@ -6,7 +6,7 @@ volatile uint8_t button_count;
 volatile uint8_t rtc_flag;
 volatile uint32_t button_time;
 
-typedef enum
+typedef enum BUG_Mode
 {
 	DEFEND_MODE = 0,
 	SENTRY_MODE = 1
@@ -23,6 +23,7 @@ enum Sensors
 };
 
 volatile BUG_Mode global_mode;
-volatile uint8_t telem_monitor, sensor_callbacks;
+volatile uint8_t telem_monitor, sensor_callbacks, change_mode;
+volatile uint8_t laser_charge, new_laser;
 
 #endif

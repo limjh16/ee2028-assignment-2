@@ -49,12 +49,6 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-#define THRESHOLD_TEMP 29
-#define THRESHOLD_PRESSURE 1020
-#define THRESHOLD_HUMIDITY 120
-#define THRESHOLD_ACCEL 1000
-#define THRESHOLD_GYRO 10000
-#define THRESHOLD_MAG 1700
 
 /* USER CODE END PM */
 
@@ -103,13 +97,14 @@ int main(void)
 
 	/* Initialize all configured peripherals */
 	unsigned long lsm6dsl_boot_time = HAL_GetTick();
-	sensor_callbacks = 0;
+	sensor_callbacks = 0; // must be initialised to 0 BEFORE initing sensors
 	MX_GPIO_Init();
 	MX_DMA_Init();
 	MX_I2C2_Init();
 	MX_USART1_UART_Init();
 	MX_RTC_Init();
 	/* USER CODE BEGIN 2 */
+
 	while (HAL_GetTick() - lsm6dsl_boot_time < 20)
 		; // Boot-Up takes 15ms
 	MAGNETO_Init_SingleMode(&hi2c2);
@@ -119,6 +114,7 @@ int main(void)
 	printf("Peripherals Initialised\n");
 	button_count = 0;
 	global_mode = SENTRY_MODE;
+	HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, 0, RTC_WAKEUPCLOCK_CK_SPRE_16BITS); // 1Hz
 
 	/* USER CODE END 2 */
 
@@ -126,123 +122,16 @@ int main(void)
 	/* USER CODE BEGIN WHILE */
 	while (1)
 	{
-		sensor_counter = 0;
-		MAGNETO_Req(&hi2c2);
-		BARO_PSENSOR_Req(&hi2c2);
-		TH_Req(&hi2c2);
-		LSM6DSL_Req(&hi2c2);
-		while (sensor_counter < 4)
-		{
-			// if (HAL_GetTick() - lsm6dsl_boot_time > 2000)
-			// {
-			// 	lsm6dsl_boot_time = HAL_GetTick();
-			// 	printf("%d %d\n", HAL_GPIO_ReadPin(LSM3MDL_DRDY_EXTI8_GPIO_Port, LSM3MDL_DRDY_EXTI8_Pin), HAL_GPIO_ReadPin(LPS22HB_INT_DRDY_EXTI0_GPIO_Port, LPS22HB_INT_DRDY_EXTI0_Pin));
-			// }
-			if (sensor_callbacks & TEMP || sensor_callbacks & HUMIDITY)
-			{
-				TH_Power_Down(&hi2c2);
-				TH_Int_Callback(&hi2c2);
-				// printf("%d %d TH\n", sensor_counter, sensor_callbacks);
-				sensor_callbacks &= ~(TEMP | HUMIDITY);
-			}
-			if (sensor_callbacks & PRESSURE)
-			{
-				BARO_PSENSOR_Int_Callback(&hi2c2);
-				// printf("%d %d BARO\n", sensor_counter, sensor_callbacks);
-				sensor_callbacks &= ~PRESSURE;
-			}
-			if (sensor_callbacks & ACCEL || sensor_callbacks & GYRO)
-			{
-				LSM6DSL_Power_Down(&hi2c2);
-				LSM6DSL_Int_Callback(&hi2c2);
-				// printf("%d %d ACCEL\n", sensor_counter, sensor_callbacks);
-				sensor_callbacks &= ~(ACCEL | GYRO);
-			}
-			if (sensor_callbacks & MAG)
-			{
-				MAGNETO_Int_Callback(&hi2c2);
-				// printf("%d %d MAG\n", sensor_counter, sensor_callbacks);
-				sensor_callbacks &= ~MAG;
-			}
-		}
-		sensor_callbacks = 0;
-		// int16_t pData[3];
-		// MAGNETO_ProcessXYZ(pData);
-		// printf("x: %d mgauss, y: %d mgauss, z: %d mgauss\n", pData[0], pData[1], pData[2]);
-		telem_monitor = 0;
-		float temp = T_Process(&telem_monitor, THRESHOLD_TEMP);
-		float pressure = BARO_PSENSOR_Process(&telem_monitor, THRESHOLD_PRESSURE);
-		float humidity = H_Process(&telem_monitor, THRESHOLD_HUMIDITY);
-		float accel = ACCEL_ProcessMagnitude(&telem_monitor, THRESHOLD_ACCEL);
-		float gyro = GYRO_ProcessMagnitude(&telem_monitor, THRESHOLD_GYRO);
-		float mag = MAGNETO_ProcessMagnitude(&telem_monitor, THRESHOLD_MAG);
-		printf("--------------------------------\n");
-		if (!telem_monitor) // TPHAGM
-		{
-			printf("T: %0.2f°C\r\n", temp);
-			printf("P: %0.2f mbar\r\n", pressure);
-			printf("H: %0.2f%%\r\n", humidity);
-			printf("A: %0.2f cm/s^2\r\n", accel);
-			printf("G: %0.2f m°/s\r\n", gyro);
-			printf("M: %0.2f mgauss\r\n", mag);
-		}
-		else
-		{
-			if (telem_monitor & TEMP) // Temp
-				printf("T: %0.2f°C, exceeds threshold of %0.2f°C\r\n", temp, (float)THRESHOLD_TEMP);
-
-			if (telem_monitor & PRESSURE) // Pressure
-				printf("P: %0.2f mbar, exceeds threshold of %0.2f mbar\r\n", pressure, (float)THRESHOLD_PRESSURE);
-
-			if (telem_monitor & HUMIDITY) // Humidity
-				printf("H: %0.2f%%, exceeds threshold of %0.2f%%\r\n", humidity, (float)THRESHOLD_HUMIDITY);
-
-			if (telem_monitor & ACCEL) // Accel
-				printf("A: %0.2f m/s^2, exceeds threshold of %0.2f cm/s^2\r\n", accel, (float)THRESHOLD_ACCEL);
-
-			if (telem_monitor & GYRO) // Gyro
-				printf("G: %0.2f rad/s, exceeds threshold of %0.2f m°/s\r\n", gyro, (float)THRESHOLD_GYRO);
-
-			if (telem_monitor & MAG) // Mag
-				printf("M: %0.2f mgauss, exceeds threshold of %0.2f mgauss\r\n", mag, (float)THRESHOLD_MAG);
-		}
-		printf("--------------------------------\n");
-
-		HAL_SuspendTick();
-		rtc_flag = 0;
-		HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, 0, RTC_WAKEUPCLOCK_CK_SPRE_16BITS);
-		HAL_PWREx_EnterSTOP2Mode(PWR_STOPENTRY_WFI);
-		SystemClock_Config();
-		HAL_ResumeTick();
-		while (!rtc_flag)
-			;
-		HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
+		if (global_mode == SENTRY_MODE)
+			sentry_function();
+		else if (global_mode == DEFEND_MODE)
+			defend_function();
 
 		/* USER CODE END WHILE */
 
 		/* USER CODE BEGIN 3 */
 	}
 	/* USER CODE END 3 */
-}
-
-void Button_Handler(void)
-{
-	uint32_t timenow = HAL_GetTick();
-	if (button_count == 0 || timenow - button_time > 500)
-	{
-		button_count = 1;
-		button_time = timenow;
-	}
-	else if (button_count == 1)
-	{
-		button_count = 0;
-		if (global_mode)
-			global_mode = DEFEND_MODE;
-		else
-			global_mode = SENTRY_MODE;
-		button_time = timenow;
-	}
-	// printf("button\n");
 }
 
 /**

@@ -42,6 +42,13 @@ extern "C" {
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
 
+#define THRESHOLD_TEMP 32
+#define THRESHOLD_PRESSURE 1020
+#define THRESHOLD_HUMIDITY 120
+#define THRESHOLD_ACCEL 1000
+#define THRESHOLD_GYRO 10000
+#define THRESHOLD_MAG 2100
+
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/
@@ -51,6 +58,7 @@ extern "C" {
 
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
+void SystemClock_Config(void);
 
 /* USER CODE BEGIN EFP */
 
@@ -227,6 +235,8 @@ void Error_Handler(void);
 
 #define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
 void Button_Handler(void);
+void defend_function(void);
+void sentry_function(void);
 
 /* USER CODE END Private defines */
 

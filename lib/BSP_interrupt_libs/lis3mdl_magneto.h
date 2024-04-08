@@ -29,6 +29,7 @@ typedef enum
 } MAGNETO_StatusTypeDef;
 
 MAGNETO_StatusTypeDef MAGNETO_Init_SingleMode(I2C_HandleTypeDef *hi2c);
+HAL_StatusTypeDef MAGNETO_Change_ContMode(I2C_HandleTypeDef *hi2c);
 void MAGNETO_ProcessXYZ(int16_t *pData);
 float MAGNETO_ProcessMagnitude(volatile uint8_t *telem_monitor, float threshold);
 HAL_StatusTypeDef MAGNETO_Req(I2C_HandleTypeDef *hi2c);

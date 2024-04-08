@@ -62,6 +62,20 @@ MAGNETO_StatusTypeDef MAGNETO_Init_SingleMode(I2C_HandleTypeDef *hi2c)
 	return MAGNETO_OK;
 }
 
+HAL_StatusTypeDef MAGNETO_Change_ContMode(I2C_HandleTypeDef *hi2c)
+{
+	uint8_t lis3mdl_register3 = LIS3MDL_MAG_CONFIG_NORMAL_MODE | LIS3MDL_MAG_CONTINUOUS_MODE;
+	while (hi2c->State != HAL_I2C_STATE_READY)
+		;
+	HAL_StatusTypeDef status = HAL_I2C_Mem_Write_DMA(
+		hi2c, LIS3MDL_MAG_I2C_ADDRESS_HIGH,
+		LIS3MDL_MAG_CTRL_REG3,
+		I2C_MEMADD_SIZE_8BIT, &lis3mdl_register3, 1);
+	if (status != HAL_OK)
+		printf("I2C/DMA Write Error\n");
+	return status;
+}
+
 /**
  * @brief  Get XYZ magnetometer values.
  * @param  pData Pointer on 3 magnetometer values table with
