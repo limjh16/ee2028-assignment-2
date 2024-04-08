@@ -4,21 +4,26 @@
 #include <lis3mdl_magneto.h>
 #include <lps22hb_baro.h>
 #include <hts221_temphum.h>
+#include <lsm6dsl_gyro.h>
 #include <stdio.h>
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	switch (GPIO_Pin)
 	{
 	case LSM3MDL_DRDY_EXTI8_Pin:
-		MAGNETO_Int_Callback(&hi2c2);
+		sensor_callbacks |= MAG;
 		break;
 
 	case LPS22HB_INT_DRDY_EXTI0_Pin:
-		BARO_PSENSOR_Int_Callback(&hi2c2);
+		sensor_callbacks |= PRESSURE;
 		break;
 
 	case HTS221_DRDY_EXTI15_Pin:
-		TH_Int_Callback(&hi2c2);
+		sensor_callbacks |= TEMP;
+		break;
+	
+	case LSM6DSL_INT1_EXTI11_Pin:
+		sensor_callbacks |= GYRO;
 		break;
 
 	case BUTTON_EXTI13_Pin:
