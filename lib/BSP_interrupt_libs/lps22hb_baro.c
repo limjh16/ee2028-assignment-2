@@ -20,7 +20,7 @@ PSENSOR_Status_TypDef BARO_PSENSOR_Init(I2C_HandleTypeDef *hi2c)
 		return PSENSOR_ERROR;
 	}
 	// Disable DRDY pin during initialisation to prevent interrupts from messing with this
-	// HAL_GPIO_DeInit(LPS22HB_INT_DRDY_EXTI0_GPIO_Port, LPS22HB_INT_DRDY_EXTI0_Pin);
+	HAL_GPIO_DeInit(LPS22HB_INT_DRDY_EXTI0_GPIO_Port, LPS22HB_INT_DRDY_EXTI0_Pin);
 
 	uint8_t lps22hb_registers[3];
 	lps22hb_registers[0] = LPS22HB_BARO_POWER_DOWN_MODE | LPS22HB_BARO_BDU;
