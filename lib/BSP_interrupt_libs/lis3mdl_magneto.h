@@ -15,9 +15,12 @@
 
 /* Exported types ------------------------------------------------------------*/
 #define LIS3MDL_MAG_AUTO_INCR 0x80
+#ifndef I2C_DEFAULT_TIMEOUT
 #define I2C_DEFAULT_TIMEOUT 100
+#endif
 #define LSM3MDL_DRDY_EXTI8_Pin GPIO_PIN_8
 #define LSM3MDL_DRDY_EXTI8_GPIO_Port GPIOC
+#define MSBLSB(arr, i) ((((uint16_t)arr[2 * i + 1]) << 8) | (uint16_t)arr[2 * i])
 typedef enum 
 {
   MAGNETO_OK = 0,

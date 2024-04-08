@@ -61,7 +61,8 @@ void MAGNETO_ProcessXYZ(int16_t *pData)
 {
 	float sensitivity = LIS3MDL_MAG_SENSITIVITY_FOR_FS_4GA;
 	for (uint8_t i = 0; i < 3; i++)
-		pData[i] = ((int16_t)((((uint16_t)MAGNETO_Buffer[2 * i + 1]) << 8) + (uint16_t)MAGNETO_Buffer[2 * i]) * sensitivity);
+		pData[i] = ((int16_t)MSBLSB(MAGNETO_Buffer, i) *
+					sensitivity);
 }
 
 float MAGNETO_ProcessMagnitude(volatile uint8_t *telem_monitor, float threshold)
@@ -70,7 +71,8 @@ float MAGNETO_ProcessMagnitude(volatile uint8_t *telem_monitor, float threshold)
 	float magnitude = 0;
 	for (uint8_t i = 0; i < 3; i++)
 	{
-		float current = ((int16_t)((((uint16_t)MAGNETO_Buffer[2 * i + 1]) << 8) + (uint16_t)MAGNETO_Buffer[2 * i]) * sensitivity);
+		float current = ((int16_t)MSBLSB(MAGNETO_Buffer, i) *
+						 sensitivity);
 		current *= current;
 		magnitude += current;
 	}

@@ -25,9 +25,12 @@
 
 #define HTS221_TH_DRDY_EN 0x04
 
+#ifndef I2C_DEFAULT_TIMEOUT
 #define I2C_DEFAULT_TIMEOUT 100
+#endif
 #define HTS221_DRDY_EXTI15_Pin GPIO_PIN_15
 #define HTS221_DRDY_EXTI15_GPIO_Port GPIOD
+#define MSBLSB(arr, i) ((((uint16_t)arr[2 * i + 1]) << 8) | (uint16_t)arr[2 * i])
 /**
   * @brief  TSENSOR Status
   */

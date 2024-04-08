@@ -85,7 +85,7 @@ TSENSOR_Status_TypDef TH_Init_IntMode(I2C_HandleTypeDef *hi2c)
 float T_Process(volatile uint8_t *telem_monitor, float threshold)
 {
 	float tmp_f;
-	T_out = (((uint16_t)TH_Buffer[3]) << 8) | (uint16_t)TH_Buffer[2];
+	T_out = MSBLSB(TH_Buffer, 1);
 	tmp_f = (float)(T_out - T0_out) * (float)(T1_degC - T0_degC) / (float)(T1_out - T0_out) + T0_degC;
 	if (tmp_f > threshold)
 		*telem_monitor |= 0b00000001;
@@ -95,7 +95,7 @@ float T_Process(volatile uint8_t *telem_monitor, float threshold)
 float H_Process(volatile uint8_t *telem_monitor, float threshold)
 {
 	float tmp_f;
-	H_T_out = (((uint16_t)TH_Buffer[1]) << 8) | (uint16_t)TH_Buffer[0];
+	H_T_out = MSBLSB(TH_Buffer, 0);
 	tmp_f = (float)(H_T_out - H0_T0_out) * (float)(H1_rh - H0_rh) / (float)(H1_T0_out - H0_T0_out) + H0_rh;
 	tmp_f = (tmp_f > 100.0f) ? 100.0f
 			: (tmp_f < 0.0f) ? 0.0f
