@@ -40,8 +40,6 @@ typedef enum
   TSENSOR_ERROR = 1
 } TSENSOR_Status_TypDef;
 
-
-
 /** @defgroup STM32L475E_IOT01_TEMPERATURE_Exported_Functions TEMPERATURE Exported Constants
   * @{
   */

@@ -4,6 +4,16 @@
 
 static uint8_t MAGNETO_Buffer[6];
 
+enum Sensors
+{
+	TEMP     = 0b00000001,
+	PRESSURE = 0b00000010,
+	HUMIDITY = 0b00000100,
+	ACCEL    = 0b00001000,
+	GYRO     = 0b00010000,
+	MAG      = 0b00100000
+};
+
 /**
  * @brief Initialize a magnetometer sensor
  * @retval COMPONENT_ERROR in case of failure
@@ -78,7 +88,7 @@ float MAGNETO_ProcessMagnitude(volatile uint8_t *telem_monitor, float threshold)
 	}
 	magnitude = sqrtf(magnitude);
 	if (magnitude > threshold)
-		*telem_monitor |= 0b00100000;
+		*telem_monitor |= MAG;
 	return magnitude;
 }
 
@@ -92,12 +102,14 @@ HAL_StatusTypeDef MAGNETO_Req(I2C_HandleTypeDef *hi2c)
 		LIS3MDL_MAG_CTRL_REG3,
 		I2C_MEMADD_SIZE_8BIT, &lis3mdl_register3, 1);
 	if (status != HAL_OK)
-		printf("I2C/DMA Read Error\n");
+		printf("I2C/DMA Write Error\n");
 	return status;
 }
 
 HAL_StatusTypeDef MAGNETO_Int_Callback(I2C_HandleTypeDef *hi2c)
 {
+	while (hi2c->State != HAL_I2C_STATE_READY)
+	;
 	HAL_StatusTypeDef status = HAL_I2C_Mem_Read_DMA(
 		hi2c, LIS3MDL_MAG_I2C_ADDRESS_HIGH,
 		(LIS3MDL_MAG_OUTX_L | LIS3MDL_MAG_AUTO_INCR),

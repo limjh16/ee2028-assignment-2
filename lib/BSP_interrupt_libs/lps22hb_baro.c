@@ -3,6 +3,16 @@
 
 static uint8_t P_Buffer[3];
 
+enum Sensors
+{
+	TEMP = 0b00000001,
+	PRESSURE = 0b00000010,
+	HUMIDITY = 0b00000100,
+	ACCEL = 0b00001000,
+	GYRO = 0b00010000,
+	MAG = 0b00100000
+};
+
 /**
  * @brief  Initializes peripherals used by the I2C Pressure Sensor driver.
  * @retval PSENSOR status
@@ -42,7 +52,7 @@ PSENSOR_Status_TypDef BARO_PSENSOR_Init(I2C_HandleTypeDef *hi2c)
 	GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	HAL_GPIO_Init(LPS22HB_INT_DRDY_EXTI0_GPIO_Port, &GPIO_InitStruct);
-	
+
 	printf("LPS22HB Initialised\n");
 	HAL_Delay(3);
 
@@ -51,7 +61,7 @@ PSENSOR_Status_TypDef BARO_PSENSOR_Init(I2C_HandleTypeDef *hi2c)
 
 /**
  * @brief Processes pressure values in the buffer
- * 
+ *
  * @return (float) Pressure in mbar
  */
 float BARO_PSENSOR_Process(volatile uint8_t *telem_monitor, float threshold)
@@ -65,31 +75,34 @@ float BARO_PSENSOR_Process(volatile uint8_t *telem_monitor, float threshold)
 		tmp |= 0xFF000000;
 	float pressure = (int32_t)tmp / 4096.0f;
 	if (pressure > threshold)
-		*telem_monitor |= 0b00000010;
+		*telem_monitor |= PRESSURE;
 	return pressure;
 }
 
 /**
  * @brief Requests pressure sensor to capture a new reading
- * 
+ *
  * @param hi2c I2C handler
- * @return (HAL_StatusTypeDef) HAL status 
+ * @return (HAL_StatusTypeDef) HAL status
  */
 HAL_StatusTypeDef BARO_PSENSOR_Req(I2C_HandleTypeDef *hi2c)
 {
 	uint8_t lps22hb_register2 = LPS22HB_BARO_AUTO_INCR_EN | LPS22HB_BARO_ONESHOT_EN;
-	while (hi2c->State != HAL_I2C_STATE_READY);
+	while (hi2c->State != HAL_I2C_STATE_READY)
+		;
 	HAL_StatusTypeDef status = HAL_I2C_Mem_Write_DMA(
 		hi2c, LPS22HB_I2C_ADDRESS,
 		LPS22HB_CTRL_REG2,
 		I2C_MEMADD_SIZE_8BIT, &lps22hb_register2, 1);
 	if (status != HAL_OK)
-		printf("I2C/DMA Read Error\n");
+		printf("I2C/DMA Write Error\n");
 	return status;
 }
 
 HAL_StatusTypeDef BARO_PSENSOR_Int_Callback(I2C_HandleTypeDef *hi2c)
 {
+	while (hi2c->State != HAL_I2C_STATE_READY)
+		;
 	HAL_StatusTypeDef status = HAL_I2C_Mem_Read_DMA(
 		hi2c, LPS22HB_I2C_ADDRESS,
 		LPS22HB_PRESS_OUT_XL_REG,

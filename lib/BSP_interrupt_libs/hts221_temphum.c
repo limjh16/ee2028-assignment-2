@@ -12,6 +12,16 @@ uint8_t hts221_start_registers[3] = {
 	0, HTS221_TH_DRDY_EN};
 uint8_t hts221_register_1_power_down = HTS221_TH_BDU | HTS221_TH_1HZ;
 
+enum Sensors
+{
+	TEMP     = 0b00000001,
+	PRESSURE = 0b00000010,
+	HUMIDITY = 0b00000100,
+	ACCEL    = 0b00001000,
+	GYRO     = 0b00010000,
+	MAG      = 0b00100000
+};
+
 /**
  * @brief  Initializes peripherals used by the I2C Temperature Sensor driver.
  * @retval TSENSOR status
@@ -88,7 +98,7 @@ float T_Process(volatile uint8_t *telem_monitor, float threshold)
 	T_out = MSBLSB(TH_Buffer, 1);
 	tmp_f = (float)(T_out - T0_out) * (float)(T1_degC - T0_degC) / (float)(T1_out - T0_out) + T0_degC;
 	if (tmp_f > threshold)
-		*telem_monitor |= 0b00000001;
+		*telem_monitor |= TEMP;
 	return tmp_f;
 }
 
@@ -97,11 +107,11 @@ float H_Process(volatile uint8_t *telem_monitor, float threshold)
 	float tmp_f;
 	H_T_out = MSBLSB(TH_Buffer, 0);
 	tmp_f = (float)(H_T_out - H0_T0_out) * (float)(H1_rh - H0_rh) / (float)(H1_T0_out - H0_T0_out) + H0_rh;
-	tmp_f = (tmp_f > 100.0f) ? 100.0f
-			: (tmp_f < 0.0f) ? 0.0f
-							 : tmp_f;
+	// tmp_f = (tmp_f > 100.0f) ? 100.0f
+	// 		: (tmp_f < 0.0f) ? 0.0f
+	// 						 : tmp_f;
 	if (tmp_f > threshold)
-		*telem_monitor |= 0b00000100;
+		*telem_monitor |= HUMIDITY;
 	return tmp_f;
 }
 
@@ -114,12 +124,14 @@ HAL_StatusTypeDef TH_Req(I2C_HandleTypeDef *hi2c)
 		HTS221_CTRL_REG1,
 		I2C_MEMADD_SIZE_8BIT, hts221_start_registers, 1);
 	if (status != HAL_OK)
-		printf("I2C/DMA Read Error\n");
+		printf("I2C/DMA Write Error\n");
 	return status;
 }
 
 HAL_StatusTypeDef TH_Int_Callback(I2C_HandleTypeDef *hi2c)
 {
+	while (hi2c->State != HAL_I2C_STATE_READY)
+	;
 	HAL_StatusTypeDef status = HAL_I2C_Mem_Read_DMA(
 		hi2c, HTS221_I2C_ADDRESS,
 		(HTS221_HR_OUT_L_REG | HTS221_TH_AUTO_INCR),
@@ -138,7 +150,7 @@ HAL_StatusTypeDef TH_Power_Down(I2C_HandleTypeDef *hi2c)
 		HTS221_CTRL_REG1,
 		I2C_MEMADD_SIZE_8BIT, &hts221_register_1_power_down, 1);
 	if (status != HAL_OK)
-		printf("I2C/DMA Read Error\n");
+		printf("I2C/DMA Write Error\n");
 	return status;
 }
 
